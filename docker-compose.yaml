@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: app
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - .:/usr/share/nginx/html
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - .:/usr/share/nginx/html
+      - .docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8.0.32
+    container_name: db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    volumes:
+        - mysqldbvolume:/var/lib/mysql
+        - .docker/mysql/conf/my.cnf:/etc/mysql/my.cnf
+    environment:
+      MYSQL_DATABASE: laravel-app
+      MYSQL_USER: app-user
+      MYSQL_PASSWORD: "change-it"
+      MYSQL_ROOT_PASSWORD: "change-it"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+    mysqldbvolume:
+        driver: local
